@@ -1,6 +1,7 @@
 from openai import OpenAI
 import mysql.connector 
 import json
+import sqlite3
 
 # Set up API keys (Replace with actual keys)
 OPENAI_API_KEY = ""
@@ -29,34 +30,26 @@ def extract_flight_details(user_input):
         return None
 
 def get_flights(origin, destination, start_date=None, end_date=None):
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database=""
-    )
+    conn = sqlite3.connect("CS6320.db")
     cursor = conn.cursor()
 
-    query = """
-    SELECT * FROM flights 
-    WHERE origin = %s AND destination = %s
-    """
+    query = "SELECT * FROM flights WHERE origin = ? AND destination = ?"
     params = [origin, destination]
 
-    if start_date != "NA" and end_date != "NA":
-        query += " AND date BETWEEN %s AND %s"
+    if start_date != "NA" and end_date != "NA" :
+        query += " AND date BETWEEN ? AND ?"
         params.extend([start_date, end_date])
-    elif start_date != "NA":
-        query += " AND date >= %s"
+    elif start_date != "NA" :
+        query += " AND date >= ?"
         params.append(start_date)
-    elif end_date != "NA":
-        query += " AND date <= %s"
+    elif end_date != "NA" :
+        query += " AND date <= ?"
         params.append(end_date)
 
     cursor.execute(query, params)
     results = cursor.fetchall()
-    conn.close()
     cache.append(results)
+    conn.close()
     return results
 
 def flight_chatbot(user_input):

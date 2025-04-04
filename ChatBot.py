@@ -4,7 +4,7 @@ import json
 import sqlite3
 
 # Set up API keys (Replace with actual keys)
-OPENAI_API_KEY = ""
+OPENAI_API_KEY = "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"
 client = OpenAI(api_key=OPENAI_API_KEY)
 cache = []
 
@@ -62,6 +62,39 @@ def flight_chatbot(user_input):
         #return chat_with_gpt(user_input)  # Fallback to ChatGPT for general queries
         return "invalid"
 
+
+def save_booking(name, address, flight):
+    conn = sqlite3.connect("CS6320.db")
+    cursor = conn.cursor()
+
+    if flight:
+        flight_id = flight[0]
+
+        # Insert booking into the bookings table
+        cursor.execute("""
+        INSERT INTO bookings (name, address, flight_id) VALUES (?, ?, ?)
+        """, (name, address, flight_id))
+
+        conn.commit()
+        print("Booking inserted successfully.")
+    else:
+        print("No matching flight found.")
+
+    conn.close()
+
+def view_booking():
+    conn = sqlite3.connect("CS6320.db")
+    cursor = conn.cursor()
+    print(f"Chatbot: Please enter your name")
+    user_query_name = input("You: ")
+    print(f"Chatbot: Please enter your address")
+    user_query_address = input("You: ")
+    cursor.execute("""
+    SELECT * FROM bookings WHERE name=? AND address=?
+                   """, [user_query_name, user_query_address])
+    results = cursor.fetchall()
+    return results    
+
 def book_flight():
     print(f"Chatbot: here are your options, if you want to book a flight type in the number")
     options = cache[0]
@@ -75,14 +108,20 @@ def book_flight():
     print(f"Chatbot: Please enter your address")
     user_query_address = input("You: ")
     #TODO SQL Statement to insert into bookings
+    save_booking(user_query_name, user_query_address, options[int(user_query)])
     print(f"Booked flight for {user_query_name} {user_query_address} for the booking {options[int(user_query)]}")
 
 # Example usage
 if __name__ == "__main__":
+    print(f"Chatbot: Welcome to the airflight booking chatbot. Please enter where you would like to travel from and to and we will find all the best deals for you.\n\nIf you would like to see your current bookings type 'view bookings'")
     while True:
         user_query = input("You: ")
+        if user_query.lower() in ["view bookings"]:
+            flights = view_booking()
+            for flight in flights:
+                print(flight)
+            continue
         if user_query.lower() in ["book"] and len(cache) > 0:
-            print(len(cache))
             book_flight()
             break
         if user_query.lower() in ["exit", "quit"]:
@@ -90,4 +129,37 @@ if __name__ == "__main__":
             break
         response = flight_chatbot(user_query)
         print(f"Chatbot: {response}\nIf you like any of these flights, type book")
-        print(cache)
+
+
+
+def create_and_populate_flights_table():
+    conn = sqlite3.connect("CS6320.db")  # SQLite database file
+    cursor = conn.cursor()
+
+    """
+    # Create flights tabe
+    cursor.execute(
+    CREATE TABLE IF NOT EXISTS flights (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        origin TEXT NOT NULL,
+        destination TEXT NOT NULL,
+        date TEXT NOT NULL,
+        pricing REAL NOT NULL,
+        class TEXT NOT NULL,
+        company TEXT NOT NULL
+    ))
+    """
+
+    # Create bookings table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS bookings (
+        booking_number INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        flight_id INTEGER NOT NULL,
+        FOREIGN KEY (flight_id) REFERENCES flights(id) ON DELETE CASCADE
+    )
+    """)
+
+    conn.commit()
+    conn.close()

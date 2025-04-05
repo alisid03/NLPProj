@@ -1,10 +1,14 @@
+import os
+from dotenv import load_dotenv
 from openai import OpenAI
 import mysql.connector 
 import json
 import sqlite3
 
+load_dotenv()
+
 # Set up API keys (Replace with actual keys)
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY)
 cache = []
 

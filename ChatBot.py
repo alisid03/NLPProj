@@ -4,13 +4,60 @@ from openai import OpenAI
 import mysql.connector 
 import json
 import sqlite3
+import vosk
+import pyaudio
+import json
 
 load_dotenv()
+
+# Setup speech to text model
+model = vosk.Model(lang="en-us")
+rec = vosk.KaldiRecognizer(model, 16000)
 
 # Set up API keys (Replace with actual keys)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY)
 cache = []
+
+def speech_to_text():
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16,
+                    channels=1,
+                    rate=16000,
+                    input=True,
+                    frames_per_buffer=8192)
+
+
+    print("Listening for speech. Say 'Done' to stop.")
+    text = ""
+    # Start streaming and recognize speech
+    while True:
+        data = stream.read(4096)#read in chunks of 4096 bytes
+        if rec.AcceptWaveform(data):#accept waveform of input voice
+            # Parse the JSON result and get the recognized text
+            result = json.loads(rec.Result())
+            recognized_text = result['text']
+            
+            # Write recognized text to the file
+            print("You: " + recognized_text)
+            
+            # Check for the termination keyword
+            if "done" in recognized_text.lower():
+                print("Done keyword detected. Stopping...")
+                print("Chatbot: Is this good, or would you like to try again?")
+                answer = input("You (y/n): ")
+                if answer == "y" :
+                    break
+            else:
+                text = recognized_text
+
+    # Stop and close the stream
+    stream.stop_stream()
+    stream.close()
+
+    # Terminate the PyAudio object
+    p.terminate()
+    return text
 
 def chat_with_gpt(user_input):
     """Interacts with ChatGPT to process user queries."""
@@ -131,6 +178,8 @@ if __name__ == "__main__":
         if user_query.lower() in ["exit", "quit"]:
             print("Chatbot: Goodbye!")
             break
+        if user_query.lower() in ["speech"]:
+            user_query = speech_to_text()
         response = flight_chatbot(user_query)
         print(f"Chatbot: {response}\nIf you like any of these flights, type book")
 

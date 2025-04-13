@@ -162,23 +162,42 @@ def book_flight():
     save_booking(user_query_name, user_query_address, options[int(user_query)])
     print(f"Booked flight for {user_query_name} {user_query_address} for the booking {options[int(user_query)]}")
 
+def detect_intent(user_input):
+    prompt = f"""
+    You are an intent classifier for a flight booking chatbot. Categorize the user's input into one of the following intents:
+    - search_flight
+    - view_bookings
+    - book_flight
+    - speech
+    - exit
+
+    With the output with just the intent
+
+    Input: "{user_input}"
+    """
+    intent = chat_with_gpt(prompt).strip().lower()
+    print(intent)
+    return intent
+
 # Example usage
 if __name__ == "__main__":
     print(f"Chatbot: Welcome to the airflight booking chatbot. Please enter where you would like to travel from and to and we will find all the best deals for you.\n\nIf you would like to see your current bookings type 'view bookings'")
     while True:
         user_query = input("You: ")
-        if user_query.lower() in ["view bookings"]:
+        intent = detect_intent(user_query)
+
+        if intent == "view_bookings":
             flights = view_booking()
             for flight in flights:
                 print(flight)
             continue
-        if user_query.lower() in ["book"] and len(cache) > 0:
+        if intent == "book_flight":
             book_flight()
             break
-        if user_query.lower() in ["exit", "quit"]:
+        if intent == "exit":
             print("Chatbot: Goodbye!")
             break
-        if user_query.lower() in ["speech"]:
+        if intent == "speech":
             user_query = speech_to_text()
         response = flight_chatbot(user_query)
         print(f"Chatbot: {response}\nIf you like any of these flights, type book")

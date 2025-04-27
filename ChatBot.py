@@ -59,6 +59,33 @@ def speech_to_text():
     p.terminate()
     return text
 
+# Add at the top
+dialogue_state = {
+    "intent": None,
+    "origin": None,
+    "destination": None,
+    "date_start": None,
+    "date_end": None
+}
+
+def reset_dialogue_state():
+    global dialogue_state
+    dialogue_state = {
+        "intent": None,
+        "origin": None,
+        "destination": None,
+        "date_start": None,
+        "date_end": None
+    }
+
+def update_state_with_details(flight_details):
+    global dialogue_state
+    if flight_details:
+        dialogue_state["origin"] = flight_details.get("origin")
+        dialogue_state["destination"] = flight_details.get("destination")
+        dialogue_state["date_start"] = flight_details.get("date_start")
+        dialogue_state["date_end"] = flight_details.get("date_end")
+
 def chat_with_gpt(user_input):
     """Interacts with ChatGPT to process user queries."""
     response = client.chat.completions.create(model="gpt-4o-mini",
@@ -70,7 +97,7 @@ def extract_flight_details(user_input):
     prompt = f"""
     Extract the departure city, destination city, and travel date range from the following query:
     Query: "{user_input}"
-    Provide the response in a format like this, using the nearest airport to that city:
+    Provide the response in a format like this, using the nearest airport to that city, if a city or date is not given set the value to 'NA'':
     {{"origin": "NYC", "destination": "LAX", "date_start": "2024-03-10", "date_end: "NA"}}
     """
     response = chat_with_gpt(prompt)
@@ -103,15 +130,36 @@ def get_flights(origin, destination, start_date=None, end_date=None):
     conn.close()
     return results
 
+def fill_missing_details():
+    global dialogue_state
+    if dialogue_state["origin"] == 'NA':
+        dialogue_state["origin"] = input("Chatbot: What is your departure city?\nYou: ")
+    if dialogue_state["destination"] == 'NA':
+        dialogue_state["destination"] = input("Chatbot: What is your destination city?\nYou: ")
+    if dialogue_state["date_start"] == 'NA':
+        dialogue_state["date_start"] = input("Chatbot: When do you want to depart? (YYYY-MM-DD)\nYou: ")
+    # Optional: Ask for end date
+    if dialogue_state["date_end"] == 'NA':
+        dialogue_state["date_end"] = input("Chatbot: When is your return date? (Or type 'NA' if one-way)\nYou: ")
+
 def flight_chatbot(user_input):
-    """Main chatbot function that handles user queries."""
+    """Main chatbot function that handles user queries with state tracking."""
     flight_details = extract_flight_details(user_input)
     print(flight_details)
-    if flight_details:
-        return get_flights(flight_details["origin"], flight_details["destination"], flight_details["date_start"], flight_details["date_end"])
-    else:
-        #return chat_with_gpt(user_input)  # Fallback to ChatGPT for general queries
-        return "invalid"
+    update_state_with_details(flight_details)
+    
+    # Fill missing details
+    fill_missing_details()
+
+    updated_flight_details =  extract_flight_details(dialogue_state)
+    update_state_with_details(updated_flight_details)
+    # Search flights based on updated state
+    return get_flights(
+        dialogue_state["origin"], 
+        dialogue_state["destination"], 
+        dialogue_state["date_start"], 
+        dialogue_state["date_end"]
+    )
 
 
 def save_booking(name, address, flight):

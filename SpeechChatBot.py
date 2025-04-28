@@ -117,7 +117,7 @@ def speech_chatbot():
                                     name = speech_to_text()
                                     text_to_speech("Please say your address.")
                                     address = speech_to_text()
-                                    save_booking(name, address, flights[chosen])
+                                    save_booking(name, address, next(flight for flight in flights if flight[0] == chosen))
                                     text_to_speech(f"Booking confirmed for flight ID {chosen}.")
                                     break
                                 else:

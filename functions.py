@@ -1,4 +1,5 @@
 from db import cursor, conn
+from resendEmail import sendEmail
 
 def get_ticket_price(destination_city):
     cursor.execute("SELECT ticket_price FROM flights WHERE lower(destination_city) = %s", (destination_city.lower(),))
@@ -11,22 +12,23 @@ def get_available_seats(destination_city):
     return result[0] if result else "Unknown"
 
 def book_ticket(user_name, destination_city):
-    cursor.execute("SELECT flight_id, available_seats FROM flights WHERE lower(destination_city) = %s AND available_seats > 0 LIMIT 1", (destination_city.lower(),))
+    cursor.execute("SELECT flight_id, airline, flight_number, departure_airport, arrival_airport, departure_time, status, available_seats FROM flights WHERE lower(destination_city) = %s AND available_seats > 0 LIMIT 1", (destination_city.lower(),))
     result = cursor.fetchone()
     if not result:
         return f"No seats available to {destination_city}"
 
-    flight_id, _ = result
-    cursor.execute("SELECT user_id FROM users WHERE lower(name) = %s", (user_name.lower(),))
+    flight_id, _, _, _, _, _, _, _ = result
+    cursor.execute("SELECT user_id, email FROM users WHERE lower(name) = %s", (user_name.lower(),))
     user_result = cursor.fetchone()
     if not user_result:
         return f"User '{user_name}' not found."
 
-    user_id = user_result[0]
+    user_id, user_email = user_result
     cursor.execute("INSERT INTO bookings (user_id, flight_id, status) VALUES (%s, %s, %s) RETURNING booking_id", (user_id, flight_id, 'Confirmed'))
     booking_id = cursor.fetchone()[0]
     cursor.execute("UPDATE flights SET available_seats = available_seats - 1 WHERE flight_id = %s", (flight_id,))
     conn.commit()
+    sendEmail(user_email, result)
     return f"Booking confirmed for {user_name} to {destination_city}. Booking ID: {booking_id}"
 
 def get_user_bookings(user_name):

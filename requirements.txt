@@ -2,3 +2,9 @@ gradio
 openai
 psycopg2-binary
 python-dotenv
+resend
+vosk
+gtts
+pygame
+json
+pyaudio

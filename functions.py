@@ -1,5 +1,43 @@
 from db import cursor, conn
 from resendEmail import sendEmail
+from airport import city_to_airport, get_nearest_airports
+
+def get_flights_exact(departure_city, destination_city):
+    departure_city_code = city_to_airport.get(departure_city)
+    cursor.execute("SELECT * FROM flights WHERE departure_airport = %s AND lower(destination_city) = %s", [departure_city_code, destination_city.lower(),])
+    rows = cursor.fetchall()
+    columns = [column[0] for column in cursor.description]
+
+    flights = []
+
+    for tuple_row in rows:
+        row = dict(zip(columns,tuple_row))
+        flight = {
+            "flight_id": row["flight_id"],
+            "airline": row["airline"],
+            "flight_number": row["flight_number"],
+            "departure_airport": row["departure_airport"],
+            "arrival_airport": row["arrival_airport"],
+            "departure_time": row["departure_time"].strftime("%B %d, %Y at %H:%M"),
+            "arrival_time": row["arrival_time"].strftime("%B %d, %Y at %H:%M"),
+            "ticket_price": f"${row['ticket_price']:.2f}",
+            "available_seats": row["available_seats"],
+            "destination_city": row["destination_city"].title()
+        }
+        flights.append(flight)
+
+    return flights
+
+def get_flights_from_surrounding_city(departure_city, destination_city):
+    print("Searching in surrounding cities")
+    all_flights = []
+    nearest_airports = get_nearest_airports(departure_city)
+    for airport in nearest_airports:
+        city = airport["city"]
+        flights = get_flights_exact(city, destination_city)
+        all_flights.append(flights)
+
+    return all_flights
 
 def get_ticket_price(destination_city):
     cursor.execute("SELECT ticket_price FROM flights WHERE lower(destination_city) = %s", (destination_city.lower(),))

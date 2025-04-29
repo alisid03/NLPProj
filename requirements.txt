@@ -8,3 +8,4 @@ gtts
 pygame
 json
 pyaudio
+sentence-transformers

@@ -25,6 +25,14 @@ def handle_tool_call(tool_call):
         result = create_account(arguments["name"], arguments["email"], arguments["phone"])
         content = {"result": result}
 
+    elif func_name == "get_flights_exact":
+        result = get_flights_exact(arguments["departure_city"], arguments["destination_city"])
+        content = {"flights": result}
+
+    elif func_name == "get_flights_from_surrounding_city":
+        result = get_flights_from_surrounding_city(arguments["departure_city"], arguments["destination_city"])
+        content = {"flights": result}
+
     else:
         content = {"error": "Unknown tool"}
 

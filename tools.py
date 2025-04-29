@@ -1,7 +1,31 @@
-from functions import get_ticket_price, get_available_seats, book_ticket, get_user_bookings, create_account
+from functions import get_ticket_price, get_available_seats, book_ticket, get_user_bookings, create_account, get_flights_exact, get_flights_from_surrounding_city
 
 def get_all_tools():
     return [
+        {"type": "function", "function": {
+            "name": "get_flights_exact",
+            "description": "Find flights given an exact departure city and destination city",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "departure_city": {"type": "string"},
+                    "destination_city": {"type": "string"}
+                },
+                "required": ["departure_city", "destination_city"]
+            }
+        }},
+        {"type": "function", "function": {
+            "name": "get_flights_from_surrounding_city",
+            "description": "Find flights from surrounding cities near the departure city to a destination city",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "departure_city": {"type": "string"},
+                    "destination_city": {"type": "string"}
+                },
+                "required": ["departure_city", "destination_city"]
+            }
+        }},
         {"type": "function", "function": {
             "name": "get_ticket_price",
             "description": "Get ticket price to a destination city",

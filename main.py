@@ -10,6 +10,7 @@ import pygame
 import json
 import pyaudio
 import time
+import threading
 
 load_dotenv()
 
@@ -103,11 +104,39 @@ def text_to_speech(text):
     while(pygame.mixer.music.get_busy()):
         time.sleep(0.5)
 
-def speech_chat(history):
-    message = speech_to_text()
-    history = chat(message, history)
-    assistant_reply = history[-1]["content"]  # Get the assistant's latest reply
-    text_to_speech(assistant_reply)
+is_speaking = False  # Global flag
+
+def start_speaking(history):
+    global is_speaking
+    is_speaking = True
+    return "", history  # no immediate updates
+
+def stop_speaking():
+    global is_speaking
+    is_speaking = False
+
+def speech_chat(history: list):
+    global is_speaking
+
+    while is_speaking:
+        user_message = speech_to_text()
+
+        if not user_message.strip():
+            continue
+
+        if user_message.lower() in ["stop", "exit", "quit"]:
+            is_speaking = False
+            EXIT_MESSAGE = "exiting speech mode"
+            text_to_speech(EXIT_MESSAGE)
+            break
+
+        history = chat(user_message, history)
+
+        assistant_reply = history[-1]["content"]
+        text_to_speech(assistant_reply)
+
+        yield history
+
     return history
 
 with gr.Blocks() as demo:
@@ -115,12 +144,16 @@ with gr.Blocks() as demo:
     with gr.Row():
         textbox = gr.Textbox(placeholder="Type your message here...")
         send_btn = gr.Button("Send")
-        speech_btn = gr.Button("🎤 Speak")
+        speech_start_btn = gr.Button("🎤 Start Speaking")
+        speech_stop_btn = gr.Button("🛑 Say 'exit' to exit speech mode")
 
-    # Text input handling
+    # Text input path
     send_btn.click(fn=chat, inputs=[textbox, chatbot], outputs=chatbot)
-    
-    # Speech input handling
-    speech_btn.click(fn=speech_chat, inputs=chatbot, outputs=chatbot)
+
+    # Speech input path
+    speech_start_btn.click(fn=start_speaking, inputs=chatbot, outputs=[textbox, chatbot], queue=False).then(
+        fn=speech_chat, inputs=chatbot, outputs=chatbot
+    )
+    speech_stop_btn.click(fn=stop_speaking, inputs=None, outputs=None)
 
 demo.launch()

@@ -1,8 +1,7 @@
 import json
 from functions import *
 
-def handle_tool_call(message):
-    tool_call = message.tool_calls[0]
+def handle_tool_call(tool_call):
     func_name = tool_call.function.name
     arguments = json.loads(tool_call.function.arguments)
 

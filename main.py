@@ -56,7 +56,7 @@ def chat(message, history):
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": final_assistant_message.content})
 
-    return history
+    return "", history
 
 def speech_to_text():
     import time
@@ -120,6 +120,7 @@ def speech_chat(history: list):
 
     while is_speaking:
         user_message = speech_to_text()
+        text_to_speech("Gotcha")
 
         if not user_message.strip():
             continue
@@ -130,7 +131,7 @@ def speech_chat(history: list):
             text_to_speech(EXIT_MESSAGE)
             break
 
-        history = chat(user_message, history)
+        _, history = chat(user_message, history)
 
         assistant_reply = history[-1]["content"]
         text_to_speech(assistant_reply)
@@ -148,7 +149,8 @@ with gr.Blocks() as demo:
         speech_stop_btn = gr.Button("🛑 Say 'exit' to exit speech mode")
 
     # Text input path
-    send_btn.click(fn=chat, inputs=[textbox, chatbot], outputs=chatbot)
+    textbox.submit(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot])
+    send_btn.click(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot])
 
     # Speech input path
     speech_start_btn.click(fn=start_speaking, inputs=chatbot, outputs=[textbox, chatbot], queue=False).then(

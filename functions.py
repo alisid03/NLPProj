@@ -71,7 +71,7 @@ def book_ticket(user_name, destination_city):
 
 def get_user_bookings(user_name):
     cursor.execute("""
-        SELECT u.name, f.airline, f.flight_number, f.departure_airport, f.arrival_airport, f.departure_time, b.status
+        SELECT u.name, f.airline, f.flight_number, f.departure_airport, f.arrival_airport, f.departure_time, b.status, b.booking_id
         FROM bookings b
         JOIN users u ON b.user_id = u.user_id
         JOIN flights f ON b.flight_id = f.flight_id
@@ -81,7 +81,7 @@ def get_user_bookings(user_name):
     if not results:
         return "No bookings found."
     return [{
-        "user": row[0], "airline": row[1], "flight_number": row[2],
+        "user": row[0], "booking_id": row[7], "airline": row[1], "flight_number": row[2],
         "from": row[3], "to": row[4], "departure": row[5].isoformat(), "status": row[6]
     } for row in results]
 
@@ -94,3 +94,83 @@ def create_account(name, email, phone):
     except:
         conn.rollback()
         return "An account with this email already exists."
+
+def get_flights_by_date(departure_city, destination_city, date):
+    departure_code = city_to_airport.get(departure_city)
+    if not departure_code:
+        return f"Unknown departure city: {departure_city}"
+
+    cursor.execute("""
+        SELECT * FROM flights
+        WHERE departure_airport = %s 
+          AND lower(destination_city) = %s 
+          AND DATE(departure_time) = %s
+    """, (departure_code, destination_city.lower(), date))
+
+    rows = cursor.fetchall()
+    if not rows:
+        return f"No flights found on {date} from {departure_city} to {destination_city}"
+
+    columns = [desc[0] for desc in cursor.description]
+    return [
+        {
+            "flight_id": row_dict["flight_id"],
+            "airline": row_dict["airline"],
+            "flight_number": row_dict["flight_number"],
+            "departure_time": row_dict["departure_time"].strftime("%B %d, %Y at %H:%M"),
+            "arrival_time": row_dict["arrival_time"].strftime("%B %d, %Y at %H:%M"),
+            "ticket_price": f"${row_dict['ticket_price']:.2f}"
+        }
+        for row in rows
+        for row_dict in [dict(zip(columns, row))]
+    ]
+
+def cancel_booking(booking_id):
+    cursor.execute("SELECT status FROM bookings WHERE booking_id = %s", (booking_id,))
+    result = cursor.fetchone()
+    if not result:
+        return f"Booking ID {booking_id} not found."
+
+    if result[0] == "Cancelled":
+        return f"Booking {booking_id} is already cancelled."
+
+    cursor.execute("UPDATE bookings SET status = %s WHERE booking_id = %s", ('Cancelled', booking_id))
+    conn.commit()
+    return f"Booking {booking_id} has been cancelled successfully."
+
+def get_airport_code(city):
+    code = city_to_airport.get(city)
+    return code if code else f"No airport code found for {city}"
+
+def get_nearby_airports(city):
+    airports = get_nearest_airports(city)
+    if not airports:
+        return f"No nearby airports found for {city}"
+    return [{"city": a["city"], "airport_code": a["airport_code"]} for a in airports]
+
+def get_flight_status(flight_number):
+    cursor.execute("SELECT flight_number, status FROM flights WHERE flight_number = %s", (flight_number,))
+    result = cursor.fetchone()
+    if not result:
+        return f"No status found for flight {flight_number}"
+    return {"flight_number": result[0], "status": result[1]}
+
+def get_flight_by_airline(airline_name):
+    cursor.execute("SELECT * FROM flights WHERE lower(airline) = %s", (airline_name.lower(),))
+    rows = cursor.fetchall()
+    if not rows:
+        return f"No flights found for airline {airline_name}"
+
+    columns = [desc[0] for desc in cursor.description]
+    return [
+        {
+            "flight_number": row_dict["flight_number"],
+            "departure_airport": row_dict["departure_airport"],
+            "arrival_airport": row_dict["arrival_airport"],
+            "departure_time": row_dict["departure_time"].strftime("%B %d, %Y at %H:%M"),
+            "arrival_time": row_dict["arrival_time"].strftime("%B %d, %Y at %H:%M"),
+            "ticket_price": f"${row_dict['ticket_price']:.2f}"
+        }
+        for row in rows
+        for row_dict in [dict(zip(columns, row))]
+    ]

@@ -4,7 +4,7 @@ import resend
 resend.api_key = os.environ["RESEND_API_KEY"]
 
 def sendEmail(email, booking):
-    # Assuming booking = (airline, flight_number, departure_airport, arrival_airport, departure_time, status)
+    # Can only send to Ali's email
     _, airline, flight_number, departure_airport, arrival_airport, departure_time, status, _ = booking
 
     html_content = f"""

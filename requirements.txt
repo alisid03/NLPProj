@@ -6,6 +6,6 @@ resend
 vosk
 gtts
 pygame
-json
 pyaudio
 sentence-transformers
+geopy

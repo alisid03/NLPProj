@@ -19,7 +19,7 @@ def handle_tool_call(tool_call):
         content = {"destination_city": arguments["destination_city"], "available_seats": result}
 
     elif func_name == "book_ticket":
-        result = book_ticket(arguments["user_name"], arguments["destination_city"])
+        result = book_ticket(arguments["user_name"], arguments["flight_number"])
         content = {"result": result}
 
     elif func_name == "get_user_bookings":

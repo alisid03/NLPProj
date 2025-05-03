@@ -1,0 +1,12 @@
+gradio
+openai
+psycopg2-binary
+python-dotenv
+resend
+vosk
+gtts
+pygame
+pyaudio
+sentence-transformers
+geopy
+fpdf

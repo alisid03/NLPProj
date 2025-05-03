@@ -54,9 +54,9 @@ def get_all_tools():
                 "type": "object",
                 "properties": {
                     "user_name": {"type": "string"},
-                    "destination_city": {"type": "string"}
+                    "flight_number": {"type": "string"}
                 },
-                "required": ["user_name", "destination_city"]
+                "required": ["user_name", "flight_id"]
             }}},
         {"type": "function", "function": {
             "name": "get_user_bookings",

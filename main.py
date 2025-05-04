@@ -49,12 +49,14 @@ def chat(message, history):
             for tr in tool_responses:
                 try:
                     content_dict = json.loads(tr["content"])
-                    if "file_path" in content_dict:
-                        file_path = content_dict["file_path"]
+                    if "receipt" in content_dict:
+                        file_path = content_dict["receipt"]
                         history.append({"role": "user", "content": message})
-                        history.append({"role": "assistant", "content": final_assistant_message.content})
-                        print(file_path)
-                        return "", history, file_path
+                        history.append({"role": "assistant", "content": content_dict["result"]})
+                        history.append({"role": "assistant", "content": gr.File(value=file_path)})
+                        print("ENCODED FILE")
+                        print(file_path.encode('latin1'))
+                        return "", history
                 except Exception as e:
                     print("Failed to parse tool response:", e)
         # Append the tool call request
@@ -72,7 +74,7 @@ def chat(message, history):
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": final_assistant_message.content})
 
-    return "", history, None
+    return "", history
 
 def speech_to_text():
     import time
@@ -158,7 +160,6 @@ def speech_chat(history: list):
 
 with gr.Blocks() as demo:
     chatbot = gr.Chatbot(type="messages")
-    file_output = gr.File(label="Download Receipt", visible=False)
     with gr.Row():
         textbox = gr.Textbox(placeholder="Type your message here...")
         send_btn = gr.Button("Send")
@@ -166,8 +167,8 @@ with gr.Blocks() as demo:
         speech_stop_btn = gr.Button("🛑 Say 'exit' to exit speech mode")
 
     # Text input path
-    textbox.submit(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot, file_output])
-    send_btn.click(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot, file_output])
+    textbox.submit(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot])
+    send_btn.click(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot])
 
     # Speech input path
     speech_start_btn.click(fn=start_speaking, inputs=chatbot, outputs=[textbox, chatbot], queue=False).then(

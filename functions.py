@@ -4,6 +4,7 @@ from airport import city_to_airport, get_nearest_airports
 from fpdf import FPDF
 from datetime import datetime
 import os
+from io import BytesIO
 
 def get_flights_exact(departure_city, destination_city):
     departure_city_code = city_to_airport.get(departure_city)
@@ -85,9 +86,11 @@ def book_ticket(user_name, flight_number):
     }
 
     receipt_path = f"booking_receipt_{booking_id}.pdf"
-    generate_booking_receipt(receipt_data, receipt_path)
-
-    return f"Booking confirmed for {user_name} to {arrival_airport}. \nBooking ID: {booking_id}", os.path.abspath(receipt_path)
+    file_data = generate_booking_receipt(receipt_data, receipt_path)
+    print(file_data)
+    print(file_data.getvalue())
+    print(file_data.getvalue().decode('latin1'))
+    return f"Booking confirmed for {user_name} to {arrival_airport}. \nBooking ID: {booking_id}", receipt_path
 
 def generate_booking_receipt(booking_data, output_path):
     pdf = FPDF()
@@ -102,6 +105,10 @@ def generate_booking_receipt(booking_data, output_path):
         pdf.cell(200, 10, txt=f"{key.replace('_', ' ').title()}: {value}", ln=True)
 
     pdf.output(output_path)
+    # Write to memory buffer
+    with open(output_path, 'rb') as file:
+        pdf_buffer = BytesIO(file.read())
+    return pdf_buffer
 
 def get_user_bookings(user_name):
     cursor.execute("""

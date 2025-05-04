@@ -87,7 +87,7 @@ def book_ticket(user_name, flight_number):
     receipt_path = f"booking_receipt_{booking_id}.pdf"
     generate_booking_receipt(receipt_data, receipt_path)
 
-    return f"Booking confirmed for {user_name} to {arrival_airport}. \nBooking ID: {booking_id}"
+    return f"Booking confirmed for {user_name} to {arrival_airport}. \nBooking ID: {booking_id}", os.path.abspath(receipt_path)
 
 def generate_booking_receipt(booking_data, output_path):
     pdf = FPDF()

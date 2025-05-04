@@ -2,7 +2,7 @@ import os
 import gradio as gr
 from dotenv import load_dotenv
 from openai import OpenAI
-from ChatBot import handle_tool_call
+from chatbot import handle_tool_call
 from tools import get_all_tools
 import vosk
 from gtts import gTTS
@@ -27,6 +27,7 @@ book flights, and retrieve user bookings. Keep your answers short and courteous.
 """
 
 def chat(message, history):
+    file_path = None
     messages = [{"role": "system", "content": system_message}] + history + [{"role": "user", "content": message}]
 
     response = openai.chat.completions.create(model=MODEL, messages=messages, tools=get_all_tools())
@@ -42,6 +43,20 @@ def chat(message, history):
             tool_response = handle_tool_call(single_tool_call)  # <<< modified
             tool_responses.append(tool_response)
 
+        # Check tool_responses for file_path
+        print(tool_responses)
+        if tool_responses:
+            for tr in tool_responses:
+                try:
+                    content_dict = json.loads(tr["content"])
+                    if "file_path" in content_dict:
+                        file_path = content_dict["file_path"]
+                        history.append({"role": "user", "content": message})
+                        history.append({"role": "assistant", "content": final_assistant_message.content})
+                        print(file_path)
+                        return "", history, file_path
+                except Exception as e:
+                    print("Failed to parse tool response:", e)
         # Append the tool call request
         messages.append(tool_call_msg)
 
@@ -53,10 +68,11 @@ def chat(message, history):
 
     final_assistant_message = response.choices[0].message
 
+
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": final_assistant_message.content})
 
-    return "", history
+    return "", history, None
 
 def speech_to_text():
     import time
@@ -142,6 +158,7 @@ def speech_chat(history: list):
 
 with gr.Blocks() as demo:
     chatbot = gr.Chatbot(type="messages")
+    file_output = gr.File(label="Download Receipt", visible=False)
     with gr.Row():
         textbox = gr.Textbox(placeholder="Type your message here...")
         send_btn = gr.Button("Send")
@@ -149,8 +166,8 @@ with gr.Blocks() as demo:
         speech_stop_btn = gr.Button("🛑 Say 'exit' to exit speech mode")
 
     # Text input path
-    textbox.submit(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot])
-    send_btn.click(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot])
+    textbox.submit(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot, file_output])
+    send_btn.click(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot, file_output])
 
     # Speech input path
     speech_start_btn.click(fn=start_speaking, inputs=chatbot, outputs=[textbox, chatbot], queue=False).then(

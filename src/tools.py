@@ -1,4 +1,4 @@
-from functions import (
+from src.functions import (
     get_ticket_price, get_available_seats, book_ticket, get_user_bookings,
     create_account, get_flights_exact, get_flights_from_surrounding_city,
     get_flights_by_date, cancel_booking, get_airport_code, get_nearby_airports,

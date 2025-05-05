@@ -2,9 +2,9 @@ import os
 import gradio as gr
 from dotenv import load_dotenv
 from openai import OpenAI
-from chatbot import handle_tool_call
-from tools import get_all_tools
-from speech import text_to_speech, speech_to_text
+from src.chatbot import handle_tool_call
+from src.tools import get_all_tools
+from src.speech import text_to_speech, speech_to_text
 import json
 
 
@@ -21,7 +21,7 @@ book flights, and retrieve user bookings. Keep your answers short and courteous.
 """
 
 def chat(message, history):
-    if(isinstance(history[-1]["content"],gr.File)):
+    if(len(history) > 0 and isinstance(history[-1]["content"],gr.File)):
         history.pop()
     file_path = None
     messages = [{"role": "system", "content": system_message}] + history + [{"role": "user", "content": message}]
@@ -109,22 +109,3 @@ def speech_chat(history: list):
 
     return history
 
-with gr.Blocks() as demo:
-    chatbot = gr.Chatbot(type="messages")
-    with gr.Row():
-        textbox = gr.Textbox(placeholder="Type your message here...")
-        send_btn = gr.Button("Send")
-        speech_start_btn = gr.Button("🎤 Start Speaking")
-        speech_stop_btn = gr.Button("🛑 Say 'exit' to exit speech mode")
-
-    # Text input path
-    textbox.submit(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot])
-    send_btn.click(fn=chat, inputs=[textbox, chatbot], outputs=[textbox, chatbot])
-
-    # Speech input path
-    speech_start_btn.click(fn=start_speaking, inputs=chatbot, outputs=[textbox, chatbot], queue=False).then(
-        fn=speech_chat, inputs=chatbot, outputs=chatbot
-    )
-    speech_stop_btn.click(fn=stop_speaking, inputs=None, outputs=None)
-
-demo.launch()

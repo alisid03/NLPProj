@@ -1,6 +1,6 @@
-from db import cursor, conn
-from resendEmail import sendEmail
-from airport import city_to_airport, get_nearest_airports
+from src.db import cursor, conn
+from src.resendEmail import sendEmail
+from src.airport import city_to_airport, get_nearest_airports
 from fpdf import FPDF
 from datetime import datetime
 import os

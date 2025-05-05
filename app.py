@@ -1,5 +1,5 @@
 import gradio as gr
-from main import chat, start_speaking, speech_chat, stop_speaking
+from src.main import chat, start_speaking, speech_chat, stop_speaking
 
 with gr.Blocks() as demo:
     chatbot = gr.Chatbot(type="messages")
@@ -19,4 +19,6 @@ with gr.Blocks() as demo:
     )
     speech_stop_btn.click(fn=stop_speaking, inputs=None, outputs=None)
 
-demo.launch(share=True)
+
+if __name__ == "__main__":
+    demo.launch(share=True)

@@ -121,7 +121,7 @@ model = vosk.Model("model")
 ## ▶️ Launch the App
 
 ```bash
-python src/main.py
+python app.py
 ```
 
 Gradio will start a local web server where you can interact with FlightAI.

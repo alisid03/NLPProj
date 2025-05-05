@@ -1,3 +1,4 @@
+---
 title: FlightAI
 emoji: 💬
 colorFrom: yellow
@@ -7,7 +8,7 @@ sdk_version: 5.0.1
 app_file: app.py
 pinned: false
 short_description: A flight ai chatbot
-
+---
 # ✈️ Flight Booking Chatbot
 
 A conversational Python chatbot that helps users search and book flights. It integrates OpenAI's GPT model for intelligent query parsing and uses SQLite to store flight and booking data.

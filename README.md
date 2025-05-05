@@ -30,7 +30,7 @@
 
 ```
 .
-├── data/                # (Optional) Local SQLite flight/booking database
+├── data/                # (Optional) Connection to database and k means model created
 ├── receipts/            # Stores generated PDF booking receipts
 ├── src/
 │   ├── main.py          # Main Gradio app entry point

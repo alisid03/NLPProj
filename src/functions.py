@@ -85,11 +85,8 @@ def book_ticket(user_name, flight_number):
         "booking_date": str(datetime.now().date())
     }
 
-    receipt_path = f"booking_receipt_{booking_id}.pdf"
-    file_data = generate_booking_receipt(receipt_data, receipt_path)
-    print(file_data)
-    print(file_data.getvalue())
-    print(file_data.getvalue().decode('latin1'))
+    receipt_path = f"receipts/booking_receipt_{booking_id}.pdf"
+    generate_booking_receipt(receipt_data, receipt_path)
     return f"Booking confirmed for {user_name} to {arrival_airport}. \nBooking ID: {booking_id}", receipt_path
 
 def generate_booking_receipt(booking_data, output_path):
@@ -105,10 +102,6 @@ def generate_booking_receipt(booking_data, output_path):
         pdf.cell(200, 10, txt=f"{key.replace('_', ' ').title()}: {value}", ln=True)
 
     pdf.output(output_path)
-    # Write to memory buffer
-    with open(output_path, 'rb') as file:
-        pdf_buffer = BytesIO(file.read())
-    return pdf_buffer
 
 def get_user_bookings(user_name):
     cursor.execute("""

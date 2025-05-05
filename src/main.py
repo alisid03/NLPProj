@@ -4,13 +4,9 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from chatbot import handle_tool_call
 from tools import get_all_tools
-import vosk
-from gtts import gTTS
-import pygame
+from speech import text_to_speech, speech_to_text
 import json
-import pyaudio
-import time
-import threading
+
 
 load_dotenv()
 
@@ -18,8 +14,6 @@ openai_api_key = os.getenv('OPENAI_API_KEY')
 openai = OpenAI()
 MODEL = "gpt-4o-mini"
 
-model = vosk.Model(lang="en-us")
-rec = vosk.KaldiRecognizer(model, 16000)
 
 system_message = """
 You are a helpful assistant for an airline called FlightAI. You can provide ticket prices, seat availability,
@@ -27,6 +21,8 @@ book flights, and retrieve user bookings. Keep your answers short and courteous.
 """
 
 def chat(message, history):
+    if(isinstance(history[-1]["content"],gr.File)):
+        history.pop()
     file_path = None
     messages = [{"role": "system", "content": system_message}] + history + [{"role": "user", "content": message}]
 
@@ -54,8 +50,6 @@ def chat(message, history):
                         history.append({"role": "user", "content": message})
                         history.append({"role": "assistant", "content": content_dict["result"]})
                         history.append({"role": "assistant", "content": gr.File(value=file_path)})
-                        print("ENCODED FILE")
-                        print(file_path.encode('latin1'))
                         return "", history
                 except Exception as e:
                     print("Failed to parse tool response:", e)
@@ -75,52 +69,6 @@ def chat(message, history):
     history.append({"role": "assistant", "content": final_assistant_message.content})
 
     return "", history
-
-def speech_to_text():
-    import time
-    p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8192)
-    text = ""
-    silence_threshold = 1.5  # seconds of silence
-    last_spoken = time.time()
-    stream.start_stream()
-
-    while True:
-        data = stream.read(4096, exception_on_overflow=False)
-        if rec.AcceptWaveform(data):
-            result = json.loads(rec.Result())
-            recognized_text = result.get('text', '').strip()
-            if recognized_text:
-                print("You: " + recognized_text)
-                text += " " + recognized_text
-                last_spoken = time.time()
-        else:
-            # Check for silence
-            if time.time() - last_spoken > silence_threshold and text:
-                print("Chatbot: Got it! Let's continue.")
-                break
-
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-    return text.strip()
-
-def text_to_speech(text):
-    print(f"Chatbot: {text}")
-    language = 'en'
-
-    myobj = gTTS(text=text, lang=language, slow=False)
-
-    myobj.save("audio.mp3")
-
-    pygame.mixer.init()
-
-    pygame.mixer.music.load("audio.mp3")
-
-    pygame.mixer.music.play()
-
-    while(pygame.mixer.music.get_busy()):
-        time.sleep(0.5)
 
 is_speaking = False  # Global flag
 
@@ -152,6 +100,9 @@ def speech_chat(history: list):
         _, history = chat(user_message, history)
 
         assistant_reply = history[-1]["content"]
+        print(assistant_reply)
+        if(isinstance(assistant_reply,gr.File)):
+            assistant_reply = history[-2]["content"]
         text_to_speech(assistant_reply)
 
         yield history

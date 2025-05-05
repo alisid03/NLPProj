@@ -1,9 +1,7 @@
-from sentence_transformers import SentenceTransformer
 from geopy.geocoders import Nominatim
 from math import radians, sin, cos, sqrt, atan2
 import joblib
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
 
 city_to_airport = {
     'Atlanta': 'ATL',
@@ -139,7 +137,6 @@ airport_coords = {
 }
 
 cities = list(city_to_airport.keys())
-city_embeddings = model.encode(cities, convert_to_tensor=True)
 
 kmeans_model = joblib.load("data/airport_kmeans_model.pkl")
 def get_nearest_airports(city_name, top_k=3):

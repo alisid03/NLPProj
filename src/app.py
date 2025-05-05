@@ -19,4 +19,4 @@ with gr.Blocks() as demo:
     )
     speech_stop_btn.click(fn=stop_speaking, inputs=None, outputs=None)
 
-demo.launch()
+demo.launch(share=True)
